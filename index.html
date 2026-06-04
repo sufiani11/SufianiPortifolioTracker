@@ -1,0 +1,698 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#14110c; --bg2:#1b1711; --card:#211b14; --card2:#262019;
+    --line:#352c20; --line2:#403424;
+    --ink:#f3ece0; --muted:#9c9385; --faint:#6f675b;
+    --gold:#d9a94a; --gold-d:#b98a2f; --gold-soft:rgba(217,169,74,.13);
+    --green:#6cc185; --green-soft:rgba(108,193,133,.13);
+    --red:#e07a6e; --red-soft:rgba(224,122,110,.13);
+    --r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:"Hanken Grotesk",sans-serif;-webkit-font-smoothing:antialiased}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(1100px 520px at 88% -8%, rgba(217,169,74,.10), transparent 60%),
+      radial-gradient(900px 600px at -5% 105%, rgba(108,193,133,.05), transparent 55%),
+      var(--bg);
+  }
+  .mono{font-family:"JetBrains Mono",monospace;font-feature-settings:"tnum" 1}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
+
+  /* header */
+  header{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
+    background:linear-gradient(to bottom,rgba(20,17,12,.96),rgba(20,17,12,.82));
+    border-bottom:1px solid var(--line)}
+  .bar{max-width:1080px;margin:0 auto;padding:16px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:11px}
+  .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(145deg,var(--gold),var(--gold-d));
+    display:grid;place-items:center;color:#221a08;font-weight:700;font-family:"Fraunces",serif;font-size:18px;flex:none;align-self:center}
+  .brand h1{font-family:"Fraunces",serif;font-weight:500;font-size:23px;letter-spacing:.2px}
+  .brand span{display:block;font-size:11px;color:var(--faint);letter-spacing:.16em;text-transform:uppercase;margin-top:1px}
+  .tabs{display:flex;gap:4px;margin-left:auto;background:var(--bg2);border:1px solid var(--line);padding:4px;border-radius:11px}
+  .tab{border:0;background:transparent;color:var(--muted);font-family:inherit;font-size:13.5px;font-weight:600;
+    padding:8px 15px;border-radius:8px;cursor:pointer;transition:.18s}
+  .tab:hover{color:var(--ink)}
+  .tab.on{background:var(--gold-soft);color:var(--gold)}
+  .add{border:1px solid var(--gold-d);background:linear-gradient(145deg,var(--gold),var(--gold-d));color:#221a08;
+    font-family:inherit;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.18s}
+  .add:hover{filter:brightness(1.07)}
+  .syncpill{border:1px solid var(--line2);background:var(--bg2);font-family:inherit;font-weight:600;
+    font-size:12px;padding:7px 12px;border-radius:999px;cursor:pointer;transition:.18s;white-space:nowrap}
+  .syncpill.local{color:var(--faint)}
+  .syncpill.ok{color:var(--green);border-color:rgba(108,193,133,.4);background:var(--green-soft)}
+  .syncpill.saving{color:var(--gold);border-color:rgba(217,169,74,.4);background:var(--gold-soft)}
+  .syncpill.err{color:var(--red);border-color:rgba(224,122,110,.4);background:var(--red-soft)}
+  .syncpill:hover{filter:brightness(1.12)}
+
+  .panel{display:none;animation:fade .35s ease both}
+  .panel.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin:30px 0 14px}
+
+  /* stat cards */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 16px;position:relative;overflow:hidden}
+  .stat.hero{grid-column:span 2;background:linear-gradient(150deg,var(--card2),var(--card))}
+  .stat .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .stat .v{font-family:"JetBrains Mono",monospace;font-weight:600;margin-top:9px;font-size:25px;letter-spacing:-.5px}
+  .stat.hero .v{font-size:34px}
+  .stat .sub{font-size:12.5px;margin-top:5px;color:var(--faint)}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-family:"JetBrains Mono",monospace;font-size:12.5px;
+    font-weight:600;padding:3px 9px;border-radius:999px}
+  .chip.pos{background:var(--green-soft)} .chip.neg{background:var(--red-soft)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1.25fr;gap:16px;margin-top:16px}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+  .box h3{font-family:"Fraunces",serif;font-weight:500;font-size:17px;margin-bottom:4px}
+  .box .note{font-size:12px;color:var(--faint);margin-bottom:16px}
+
+  /* donut */
+  .donut-wrap{display:flex;align-items:center;gap:18px}
+  .donut{flex:none}
+  .donut .center{font-family:"JetBrains Mono",monospace}
+  .legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:0}
+  .legend .row{display:flex;align-items:center;gap:9px;font-size:13px}
+  .legend .dot{width:9px;height:9px;border-radius:3px;flex:none}
+  .legend .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .legend .pc{font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:12.5px}
+
+  /* perf bars */
+  .pbar{margin-bottom:15px}
+  .pbar:last-child{margin-bottom:0}
+  .pbar .top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .pbar .top b{font-weight:600}
+  .pbar .top .pct{font-family:"JetBrains Mono",monospace;font-weight:600}
+  .track{position:relative;height:9px;background:var(--bg2);border-radius:6px;display:flex;justify-content:center;overflow:hidden}
+  .track .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line2)}
+  .fill{height:100%;border-radius:6px}
+  .fill.pos{background:linear-gradient(90deg,var(--green),#4f9d68);margin-left:50%}
+  .fill.neg{background:linear-gradient(90deg,#b8534a,var(--red));margin-right:50%}
+
+  /* tables */
+  .tablewrap{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:auto}
+  table{width:100%;border-collapse:collapse;min-width:640px}
+  th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;
+    text-align:right;padding:15px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--bg2)}
+  th:first-child,td:first-child{text-align:left;padding-left:20px}
+  td:last-child,th:last-child{padding-right:20px}
+  td{padding:14px;border-bottom:1px solid var(--line);font-size:13.5px;text-align:right;white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:var(--bg2)}
+  .tk{font-weight:700;letter-spacing:.3px}
+  .co{font-size:12px;color:var(--muted);font-weight:400}
+  .sector{font-size:11px;color:var(--faint)}
+  .numinput{width:92px;background:var(--bg2);border:1px solid var(--line2);color:var(--ink);
+    font-family:"JetBrains Mono",monospace;font-size:13px;text-align:right;padding:6px 9px;border-radius:7px}
+  .numinput:focus{outline:none;border-color:var(--gold)}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:6px}
+  .badge.buy{background:var(--green-soft);color:var(--green)}
+  .badge.sell{background:var(--red-soft);color:var(--red)}
+  .del{background:transparent;border:1px solid var(--line2);color:var(--faint);border-radius:7px;
+    width:26px;height:26px;cursor:pointer;font-size:14px;line-height:1;transition:.15s}
+  .del:hover{border-color:var(--red);color:var(--red)}
+  tfoot td{font-weight:700;background:var(--bg2);border-top:1px solid var(--line2);border-bottom:0;font-size:14px}
+  .realized{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px 18px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);font-size:13.5px}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(8,6,4,.66);backdrop-filter:blur(3px);z-index:80;
+    display:none;align-items:flex-start;justify-content:center;padding:6vh 18px;overflow:auto}
+  .overlay.on{display:flex}
+  .modal{background:var(--bg2);border:1px solid var(--line2);border-radius:18px;width:100%;max-width:480px;
+    padding:26px 26px 24px;animation:pop .25s ease both}
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  .modal h2{font-family:"Fraunces",serif;font-weight:500;font-size:21px;margin-bottom:18px}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .field input,.field select{width:100%;background:var(--card);border:1px solid var(--line2);color:var(--ink);
+    font-family:inherit;font-size:14px;padding:11px 13px;border-radius:10px}
+  .field input.mono{font-family:"JetBrains Mono",monospace}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--gold)}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .seg{display:flex;gap:6px}
+  .seg button{flex:1;background:var(--card);border:1px solid var(--line2);color:var(--muted);font-family:inherit;
+    font-weight:700;padding:10px;border-radius:10px;cursor:pointer;transition:.15s}
+  .seg button.on[data-t="BUY"]{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+  .seg button.on[data-t="SELL"]{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+  .actions{display:flex;gap:10px;margin-top:20px}
+  .actions .add{flex:1;text-align:center}
+  .ghost{background:transparent;border:1px solid var(--line2);color:var(--muted);font-family:inherit;
+    font-weight:600;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer}
+  .ghost:hover{color:var(--ink);border-color:var(--ink)}
+  .err{color:var(--red);font-size:12.5px;margin-top:4px;min-height:1px}
+
+  .footnote{margin-top:26px;font-size:12px;color:var(--faint);line-height:1.6;border-top:1px solid var(--line);padding-top:16px}
+  .footnote .reset{background:none;border:0;color:var(--faint);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px}
+  .footnote .reset:hover{color:var(--red)}
+  .footnote .fnbtns{display:flex;gap:20px;margin-top:12px;flex-wrap:wrap}
+  .footnote .fnbtns .reset{color:var(--gold);text-decoration:none;font-weight:600}
+  .footnote .fnbtns .reset:hover{color:var(--ink)}
+  .footnote .fnbtns #resetBtn{color:var(--faint);font-weight:400;text-decoration:underline}
+  .footnote .fnbtns #resetBtn:hover{color:var(--red)}
+  .empty{text-align:center;color:var(--faint);padding:46px 20px;font-size:14px}
+
+  @media(max-width:760px){
+    .stats{grid-template-columns:1fr 1fr}
+    .stat.hero{grid-column:span 2}
+    .grid2{grid-template-columns:1fr}
+    .tabs{margin-left:0;order:3;width:100%}
+    .tab{flex:1}
+    .add{order:2;margin-left:auto}
+    .brand h1{font-size:20px}
+  }
+</style>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <div class="mark">₸</div>
+      <div><h1>Portfolio Tracker</h1><span>Dar es Salaam Stock Exchange · TSh</span></div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-tab="dash">Dashboard</button>
+      <button class="tab" data-tab="hold">Holdings</button>
+      <button class="tab" data-tab="txn">Transactions</button>
+    </div>
+    <button class="syncpill local" id="syncPill" title="Cloud sync status — click to set up">● Local only</button>
+    <button class="add" id="openAdd">+ Add transaction</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- DASHBOARD -->
+  <section class="panel on" id="dash">
+    <div class="eyebrow">Overview</div>
+    <div class="stats" id="statCards"></div>
+    <div class="grid2">
+      <div class="box">
+        <h3>Allocation</h3>
+        <p class="note">Share of portfolio by current value</p>
+        <div class="donut-wrap">
+          <div class="donut" id="donut"></div>
+          <div class="legend" id="legend"></div>
+        </div>
+      </div>
+      <div class="box">
+        <h3>Performance by holding</h3>
+        <p class="note">Unrealised return on cost basis</p>
+        <div id="perfBars"></div>
+      </div>
+    </div>
+    <div class="realized" id="realizedRow"></div>
+  </section>
+
+  <!-- HOLDINGS -->
+  <section class="panel" id="hold">
+    <div class="eyebrow">Current holdings · tap a price to update it</div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Ticker</th><th>Shares</th><th>Avg cost</th><th>Cost basis</th>
+          <th>Current price</th><th>Value</th><th>Gain / loss</th><th>%</th><th>Weight</th>
+        </tr></thead>
+        <tbody id="holdBody"></tbody>
+        <tfoot id="holdFoot"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section class="panel" id="txn">
+    <div class="eyebrow">Transaction log</div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Ticker</th><th>Type</th><th>Qty</th>
+          <th>Price</th><th>Fees</th><th>Net amount</th><th>Notes</th><th></th>
+        </tr></thead>
+        <tbody id="txnBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="footnote">
+    A tracking tool for your own records. Holdings are recalculated from your transaction log using the
+    <b>average-cost method</b> (fees included in cost basis), so figures may differ slightly from manually entered
+    totals. This is not investment advice.
+    <br><b style="color:var(--muted)">Saving:</b> open this file in your web browser and every change is stored
+    automatically in that browser. Use <b style="color:var(--muted)">Export backup</b> to save a copy you control,
+    or to move your data to another device or browser (then use Import there).
+    <div class="fnbtns">
+      <button class="reset" id="cloudBtn">☁ Cloud sync setup</button>
+      <button class="reset" id="exportBtn">↓ Export backup</button>
+      <button class="reset" id="importBtn">↑ Import backup</button>
+      <button class="reset" id="resetBtn">Reset to sample data</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Add transaction</h2>
+    <div class="field"><label>Type</label>
+      <div class="seg" id="typeSeg">
+        <button data-t="BUY" class="on">Buy</button>
+        <button data-t="SELL">Sell</button>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Date</label><input type="date" id="f_date"></div>
+      <div class="field"><label>Ticker</label><input id="f_ticker" placeholder="CRDB" style="text-transform:uppercase"></div>
+    </div>
+    <div class="field"><label>Company name</label><input id="f_company" placeholder="CRDB Bank"></div>
+    <div class="frow">
+      <div class="field"><label>Quantity</label><input class="mono" id="f_qty" type="number" min="0" step="1" placeholder="0"></div>
+      <div class="field"><label>Price / share</label><input class="mono" id="f_price" type="number" min="0" step="0.01" placeholder="0"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Fees / commission</label><input class="mono" id="f_fees" type="number" min="0" step="0.01" placeholder="0"></div>
+      <div class="field"><label>Sector (optional)</label><input id="f_sector" placeholder="Banking"></div>
+    </div>
+    <div class="field"><label>Notes (optional)</label><input id="f_notes" placeholder="Additional shares"></div>
+    <div class="err" id="formErr"></div>
+    <div class="actions">
+      <button class="ghost" id="cancelAdd">Cancel</button>
+      <button class="add" id="saveAdd">Save transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLOUD SYNC MODAL -->
+<div class="overlay" id="cloudOverlay">
+  <div class="modal">
+    <h2>Cloud sync setup</h2>
+    <p style="font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:16px">
+      Connect this tracker to your backend so your data is stored centrally and stays the same on every device.
+      Enter the address of your backend and the access key you set when you deployed it.
+    </p>
+    <div class="field"><label>Backend address (URL)</label>
+      <input id="c_url" placeholder="https://your-backend.onrender.com"></div>
+    <div class="field"><label>Access key</label>
+      <input id="c_key" type="password" placeholder="the secret you set on the server"></div>
+    <div class="err" id="cloudMsg"></div>
+    <div class="actions">
+      <button class="ghost" id="cloudDisconnect">Disconnect</button>
+      <button class="add" id="cloudSave">Connect &amp; sync</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PALETTE=["#d9a94a","#6cc185","#e07a6e","#7aa6d9","#c98ad0","#d4b06a","#8fcf9f"];
+
+const SEED={ prices:{}, meta:{}, txns:[] };
+
+let state=null;
+
+/* ---------- storage: local cache + optional cloud backend ---------- */
+const LKEY="spt-data-v1";
+const CFG={url:"spt-backend-url", key:"spt-backend-key"};
+
+function cfg(){
+  return { url:(localStorage.getItem(CFG.url)||"").replace(/\/+$/,''),
+           key:localStorage.getItem(CFG.key)||"" };
+}
+function cloudOn(){ const c=cfg(); return !!(c.url && c.key); }
+
+function loadLocal(){
+  try{ const v=localStorage.getItem(LKEY); if(v) return JSON.parse(v);}catch(e){}
+  return null;
+}
+function saveLocal(){
+  try{ localStorage.setItem(LKEY, JSON.stringify(state)); }catch(e){}
+}
+
+async function cloudGet(){
+  const c=cfg();
+  const r=await fetch(c.url+"/api/portfolio",{headers:{Authorization:"Bearer "+c.key}});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j=await r.json();
+  return j.data;            // may be null if backend is empty
+}
+async function cloudPut(){
+  const c=cfg();
+  const r=await fetch(c.url+"/api/portfolio",{
+    method:"PUT",
+    headers:{"Content-Type":"application/json", Authorization:"Bearer "+c.key},
+    body:JSON.stringify({data:state})
+  });
+  if(!r.ok) throw new Error("HTTP "+r.status);
+}
+
+function setSync(kind){
+  const p=document.getElementById("syncPill");
+  if(!p) return;
+  p.className="syncpill "+kind;
+  p.textContent = kind==="ok"?"☁ Synced": kind==="saving"?"⟳ Syncing…":
+                  kind==="err"?"⚠ Sync error":"● Local only";
+}
+
+/* save() is called everywhere after a change: cache locally at once,
+   then push to the cloud (debounced) if a backend is configured. */
+let putTimer=null;
+function save(){
+  saveLocal();
+  if(!cloudOn()){ setSync("local"); return; }
+  setSync("saving");
+  clearTimeout(putTimer);
+  putTimer=setTimeout(async()=>{
+    try{ await cloudPut(); setSync("ok"); }
+    catch(e){ setSync("err"); }
+  },600);
+}
+
+/* ---------- helpers ---------- */
+const TSh = n => "TSh "+Math.round(n).toLocaleString("en-US");
+const pct = n => (n>=0?"+":"")+(n*100).toFixed(2)+"%";
+const sign = n => n>=0?"pos":"neg";
+function nextId(){ return state.txns.reduce((m,t)=>Math.max(m,t.id),0)+1; }
+
+/* ---------- compute holdings (average cost) ---------- */
+function compute(){
+  const byT={};
+  const ordered=[...state.txns].sort((a,b)=> a.date<b.date?-1: a.date>b.date?1: a.id-b.id);
+  let realized=0;
+  for(const t of ordered){
+    const h = byT[t.ticker] || (byT[t.ticker]={shares:0,cost:0});
+    if(t.type==="BUY"){
+      h.shares += t.qty;
+      h.cost   += t.qty*t.price + (t.fees||0);
+    }else{ // SELL
+      const avg = h.shares>0 ? h.cost/h.shares : 0;
+      const removed = avg*t.qty;
+      realized += (t.qty*t.price - (t.fees||0)) - removed;
+      h.cost   -= removed;
+      h.shares -= t.qty;
+      if(h.shares<1e-6){ h.shares=0; h.cost=0; }
+    }
+  }
+  let totVal=0, totCost=0;
+  const rows=[];
+  for(const tk in byT){
+    const h=byT[tk];
+    if(h.shares<=0) continue;
+    const price = state.prices[tk] ?? 0;
+    const value = h.shares*price;
+    const gl = value - h.cost;
+    rows.push({
+      tk, company:(state.meta[tk]?.company)||tk, sector:(state.meta[tk]?.sector)||"—",
+      shares:h.shares, avg:h.cost/h.shares, cost:h.cost, price, value,
+      gl, glPct: h.cost>0 ? gl/h.cost : 0
+    });
+    totVal+=value; totCost+=h.cost;
+  }
+  rows.forEach(r=> r.weight = totVal>0 ? r.value/totVal : 0);
+  rows.sort((a,b)=> b.value-a.value);
+  const totGl = totVal-totCost;
+  return {rows, totVal, totCost, totGl, totGlPct: totCost>0?totGl/totCost:0, realized};
+}
+
+/* ---------- renderers ---------- */
+function renderDash(c){
+  const best=[...c.rows].sort((a,b)=>b.glPct-a.glPct)[0];
+  const worst=[...c.rows].sort((a,b)=>a.glPct-b.glPct)[0];
+  document.getElementById("statCards").innerHTML=`
+    <div class="stat hero">
+      <div class="k">Portfolio value</div>
+      <div class="v">${TSh(c.totVal)}</div>
+      <div class="sub">Invested ${TSh(c.totCost)} across ${c.rows.length} holding${c.rows.length!==1?"s":""}</div>
+    </div>
+    <div class="stat">
+      <div class="k">Unrealised gain / loss</div>
+      <div class="v ${sign(c.totGl)}">${(c.totGl>=0?"+":"")+TSh(c.totGl).replace("TSh ","")}</div>
+      <div class="sub"><span class="chip ${sign(c.totGl)}">${pct(c.totGlPct)}</span></div>
+    </div>
+    <div class="stat">
+      <div class="k">Total shares</div>
+      <div class="v">${c.rows.reduce((s,r)=>s+r.shares,0).toLocaleString("en-US")}</div>
+      <div class="sub">${best?`Best ${best.tk} ${pct(best.glPct)}`:""}</div>
+    </div>`;
+  drawDonut(c);
+  drawPerf(c);
+  const rEl=document.getElementById("realizedRow");
+  rEl.innerHTML=`<span style="color:var(--muted)">Realised gain / loss from past sales</span>
+    <span class="mono ${sign(c.realized)}" style="font-weight:600;font-size:15px">${(c.realized>=0?"+":"")+TSh(c.realized).replace("TSh ","")} TSh</span>`;
+}
+
+function drawDonut(c){
+  const R=52,SW=18,r=R-SW/2,circ=2*Math.PI*r,cx=R,cy=R;
+  let off=0, segs="";
+  c.rows.forEach((row,i)=>{
+    const len=row.weight*circ, col=PALETTE[i%PALETTE.length];
+    segs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${SW}"
+      stroke-dasharray="${len} ${circ-len}" stroke-dashoffset="${-off}"
+      transform="rotate(-90 ${cx} ${cy})"><title>${row.tk} ${(row.weight*100).toFixed(1)}%</title></circle>`;
+    off+=len;
+  });
+  document.getElementById("donut").innerHTML=`
+    <svg width="104" height="104" viewBox="0 0 ${R*2} ${R*2}">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bg2)" stroke-width="${SW}"></circle>
+      ${segs}
+      <text class="center" x="${cx}" y="${cy-2}" text-anchor="middle" fill="var(--ink)" font-size="13" font-weight="600">${c.rows.length}</text>
+      <text x="${cx}" y="${cy+12}" text-anchor="middle" fill="var(--faint)" font-size="7" letter-spacing="1">HOLDINGS</text>
+    </svg>`;
+  document.getElementById("legend").innerHTML=c.rows.map((row,i)=>`
+    <div class="row"><span class="dot" style="background:${PALETTE[i%PALETTE.length]}"></span>
+      <span class="nm" title="${row.company}">${row.tk}</span>
+      <span class="pc">${(row.weight*100).toFixed(1)}%</span></div>`).join("");
+}
+
+function drawPerf(c){
+  const max=Math.max(0.0001,...c.rows.map(r=>Math.abs(r.glPct)));
+  document.getElementById("perfBars").innerHTML=c.rows.map(r=>{
+    const w=(Math.abs(r.glPct)/max)*50;
+    return `<div class="pbar">
+      <div class="top"><b>${r.tk}</b><span class="pct ${sign(r.gl)}">${pct(r.glPct)}</span></div>
+      <div class="track"><span class="mid"></span>
+        <span class="fill ${sign(r.gl)}" style="width:${w}%"></span></div>
+    </div>`;
+  }).join("") || `<div class="empty">No holdings yet</div>`;
+}
+
+function renderHold(c){
+  const b=document.getElementById("holdBody");
+  if(!c.rows.length){ b.innerHTML=`<tr><td colspan="9" class="empty">No open positions. Add a buy transaction to get started.</td></tr>`;
+    document.getElementById("holdFoot").innerHTML=""; return; }
+  b.innerHTML=c.rows.map(r=>`
+    <tr>
+      <td><span class="tk">${r.tk}</span><div class="co">${r.company}</div><div class="sector">${r.sector}</div></td>
+      <td class="mono">${r.shares.toLocaleString("en-US")}</td>
+      <td class="mono">${r.avg.toFixed(1)}</td>
+      <td class="mono">${TSh(r.cost).replace("TSh ","")}</td>
+      <td><input class="numinput" type="number" step="0.01" min="0" value="${r.price}" data-tk="${r.tk}"></td>
+      <td class="mono">${TSh(r.value).replace("TSh ","")}</td>
+      <td class="mono ${sign(r.gl)}">${(r.gl>=0?"+":"")+Math.round(r.gl).toLocaleString("en-US")}</td>
+      <td class="mono ${sign(r.gl)}">${pct(r.glPct)}</td>
+      <td class="mono" style="color:var(--muted)">${(r.weight*100).toFixed(1)}%</td>
+    </tr>`).join("");
+  document.getElementById("holdFoot").innerHTML=`
+    <tr><td>Total</td><td></td><td></td>
+      <td class="mono">${TSh(c.totCost).replace("TSh ","")}</td><td></td>
+      <td class="mono">${TSh(c.totVal).replace("TSh ","")}</td>
+      <td class="mono ${sign(c.totGl)}">${(c.totGl>=0?"+":"")+Math.round(c.totGl).toLocaleString("en-US")}</td>
+      <td class="mono ${sign(c.totGl)}">${pct(c.totGlPct)}</td><td></td></tr>`;
+  b.querySelectorAll(".numinput").forEach(inp=>{
+    inp.addEventListener("change",e=>{
+      const v=parseFloat(e.target.value);
+      state.prices[e.target.dataset.tk]= isNaN(v)?0:v;
+      save(); renderAll();
+    });
+  });
+}
+
+function renderTxn(){
+  const b=document.getElementById("txnBody");
+  const ordered=[...state.txns].sort((a,b)=> a.date<b.date?1: a.date>b.date?-1: b.id-a.id);
+  if(!ordered.length){ b.innerHTML=`<tr><td colspan="9" class="empty">No transactions logged.</td></tr>`; return; }
+  b.innerHTML=ordered.map(t=>{
+    const net = t.type==="BUY" ? (t.qty*t.price + (t.fees||0)) : (t.qty*t.price - (t.fees||0));
+    return `<tr>
+      <td>${t.date}</td>
+      <td><span class="tk">${t.ticker}</span><div class="co">${(state.meta[t.ticker]?.company)||""}</div></td>
+      <td><span class="badge ${t.type.toLowerCase()}">${t.type}</span></td>
+      <td class="mono">${t.qty.toLocaleString("en-US")}</td>
+      <td class="mono">${t.price.toLocaleString("en-US")}</td>
+      <td class="mono">${(t.fees||0).toLocaleString("en-US")}</td>
+      <td class="mono">${Math.round(net).toLocaleString("en-US")}</td>
+      <td style="text-align:left;color:var(--muted);font-size:12.5px">${t.notes||""}</td>
+      <td><button class="del" data-del="${t.id}" title="Delete">×</button></td>
+    </tr>`;}).join("");
+  b.querySelectorAll(".del").forEach(btn=>btn.addEventListener("click",()=>{
+    const id=+btn.dataset.del;
+    if(confirm("Delete this transaction?")){
+      state.txns=state.txns.filter(t=>t.id!==id); save(); renderAll();
+    }
+  }));
+}
+
+function renderAll(){
+  const c=compute();
+  renderDash(c); renderHold(c); renderTxn();
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on");
+  document.getElementById(t.dataset.tab).classList.add("on");
+}));
+
+/* ---------- add modal ---------- */
+const ov=document.getElementById("overlay");
+let formType="BUY";
+function openModal(){
+  document.getElementById("f_date").value=new Date().toISOString().slice(0,10);
+  ["f_ticker","f_company","f_qty","f_price","f_fees","f_sector","f_notes"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("formErr").textContent="";
+  setType("BUY");
+  ov.classList.add("on");
+}
+function closeModal(){ ov.classList.remove("on"); }
+function setType(t){ formType=t;
+  document.querySelectorAll("#typeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.t===t)); }
+
+document.getElementById("openAdd").addEventListener("click",openModal);
+document.getElementById("cancelAdd").addEventListener("click",closeModal);
+ov.addEventListener("click",e=>{ if(e.target===ov) closeModal(); });
+document.querySelectorAll("#typeSeg button").forEach(b=>b.addEventListener("click",()=>setType(b.dataset.t)));
+
+document.getElementById("saveAdd").addEventListener("click",()=>{
+  const tk=document.getElementById("f_ticker").value.trim().toUpperCase();
+  const qty=parseFloat(document.getElementById("f_qty").value);
+  const price=parseFloat(document.getElementById("f_price").value);
+  const fees=parseFloat(document.getElementById("f_fees").value)||0;
+  const date=document.getElementById("f_date").value;
+  const err=document.getElementById("formErr");
+  if(!tk){ err.textContent="Enter a ticker symbol."; return; }
+  if(!date){ err.textContent="Choose a date."; return; }
+  if(!(qty>0)){ err.textContent="Quantity must be greater than zero."; return; }
+  if(!(price>=0)){ err.textContent="Enter a valid price."; return; }
+
+  const company=document.getElementById("f_company").value.trim();
+  const sector=document.getElementById("f_sector").value.trim();
+  if(!state.meta[tk]) state.meta[tk]={company:company||tk,sector:sector||"—"};
+  else { if(company) state.meta[tk].company=company; if(sector) state.meta[tk].sector=sector; }
+  if(state.prices[tk]==null) state.prices[tk]=price;
+
+  state.txns.push({id:nextId(),date,ticker:tk,type:formType,qty,price,fees,
+    notes:document.getElementById("f_notes").value.trim()});
+  save(); renderAll(); closeModal();
+});
+
+document.getElementById("exportBtn").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="portfolio-backup-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+document.getElementById("importBtn").addEventListener("click",()=>document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change",e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const d=JSON.parse(reader.result);
+      if(!d || !Array.isArray(d.txns)) throw new Error("bad");
+      state={prices:d.prices||{}, meta:d.meta||{}, txns:d.txns};
+      save(); renderAll();
+      document.querySelector('.tab[data-tab="dash"]').click();
+      alert("Backup imported successfully.");
+    }catch(err){ alert("Sorry — that file couldn't be read as a portfolio backup."); }
+    e.target.value="";
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById("resetBtn").addEventListener("click",async()=>{
+  if(confirm("Reset everything back to the original sample data? Your changes will be lost.")){
+    state=JSON.parse(JSON.stringify(SEED)); await save(); renderAll();
+    document.querySelector('.tab[data-tab="dash"]').click();
+  }
+});
+
+/* ---------- cloud sync modal ---------- */
+const cloudOv=document.getElementById("cloudOverlay");
+function openCloud(){
+  const c=cfg();
+  document.getElementById("c_url").value=c.url;
+  document.getElementById("c_key").value=c.key;
+  document.getElementById("cloudMsg").textContent="";
+  document.getElementById("cloudMsg").style.color="var(--red)";
+  cloudOv.classList.add("on");
+}
+function closeCloud(){ cloudOv.classList.remove("on"); }
+document.getElementById("cloudBtn").addEventListener("click",openCloud);
+document.getElementById("syncPill").addEventListener("click",openCloud);
+cloudOv.addEventListener("click",e=>{ if(e.target===cloudOv) closeCloud(); });
+
+document.getElementById("cloudSave").addEventListener("click",async()=>{
+  const url=document.getElementById("c_url").value.trim().replace(/\/+$/,'');
+  const key=document.getElementById("c_key").value.trim();
+  const msg=document.getElementById("cloudMsg");
+  if(!url||!key){ msg.textContent="Enter both the backend address and the access key."; return; }
+  msg.style.color="var(--muted)"; msg.textContent="Connecting…";
+  localStorage.setItem(CFG.url,url); localStorage.setItem(CFG.key,key);
+  try{
+    const remote=await cloudGet();          // verifies URL + key
+    if(remote && Array.isArray(remote.txns)){
+      state=remote; saveLocal();            // backend already has data → adopt it
+    }else{
+      await cloudPut();                      // backend empty → seed it with what we have
+    }
+    setSync("ok"); renderAll();
+    msg.style.color="var(--green)"; msg.textContent="Connected. Your data is now synced.";
+    setTimeout(closeCloud,900);
+  }catch(e){
+    setSync("err");
+    msg.style.color="var(--red)";
+    msg.textContent="Couldn't reach the backend. Check the address and key, and that the server is running.";
+  }
+});
+document.getElementById("cloudDisconnect").addEventListener("click",()=>{
+  localStorage.removeItem(CFG.url); localStorage.removeItem(CFG.key);
+  setSync("local"); closeCloud();
+});
+
+/* ---------- boot ---------- */
+(async()=>{
+  const local=loadLocal();
+  if(cloudOn()){
+    setSync("saving");
+    try{
+      const remote=await cloudGet();
+      if(remote && Array.isArray(remote.txns)){
+        state=remote; saveLocal(); setSync("ok");
+      }else{
+        state = local || JSON.parse(JSON.stringify(SEED));
+        saveLocal(); await cloudPut(); setSync("ok");
+      }
+    }catch(e){
+      state = local || JSON.parse(JSON.stringify(SEED));
+      setSync("err");          // offline / unreachable → run on local cache
+    }
+  }else{
+    state = local || JSON.parse(JSON.stringify(SEED));
+    if(!local) saveLocal();
+    setSync("local");
+  }
+  state.prices=state.prices||{}; state.meta=state.meta||{}; state.txns=state.txns||[];
+  renderAll();
+})();
+</script>
